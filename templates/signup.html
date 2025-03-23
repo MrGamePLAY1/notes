@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - IdeaVault</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+    <!-- Load Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">IdeaVault</div>
+            <nav class="nav-links">
+                <a href="{{ url_for('index') }}">Home</a>
+            </nav>
+        </header>
+        
+        <div class="signup-container">
+            <div class="signup-header">
+                <h1>Create your account</h1>
+                <p>Start capturing your ideas today</p>
+            </div>
+            
+            <div class="signup-options">
+                <!-- Google Sign-In Button -->
+                <div id="g_id_onload"
+                     data-client_id="REPLACE_WITH_ACTUAL_CLIENT_ID.apps.googleusercontent.com"
+                     data-context="signup"
+                     data-ux_mode="popup"
+                     data-callback="handleGoogleSignUp"
+                     data-auto_prompt="false">
+                </div>
+                
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signup_with"
+                     data-size="large"
+                     data-logo_alignment="left"
+                     data-width="300">
+                </div>
+                
+                <div class="signup-divider">
+                    <span>Or sign up with email</span>
+                </div>
+                
+                <form class="signup-form" action="{{ url_for('signup') }}" method="POST">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" minlength="8" required>
+                        <div class="password-requirements">
+                            Password must be at least 8 characters and include uppercase, lowercase, and numbers.
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm-password">Confirm Password</label>
+                        <input type="password" id="confirm-password" name="confirm-password" required>
+                    </div>
+                    
+                    <div class="terms-checkbox">
+                        <input type="checkbox" id="terms" name="terms" required>
+                        <label for="terms">
+                            I agree to the <a href="{{ url_for('terms') }}">Terms of Service</a> and <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </form>
+            </div>
+            
+            <div class="form-footer">
+                <p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Client-side password validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert("Passwords don't match");
+                return false;
+            }
+            
+            // Check password strength
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasNumbers = /\d/.test(password);
+            
+            if (!(hasUpperCase && hasLowerCase && hasNumbers)) {
+                e.preventDefault();
+                alert("Password must include uppercase, lowercase, and numbers");
+                return false;
+            }
+        });
+        
+        function handleGoogleSignUp(response) {
+            // Handle Google sign-up response
+            console.log(response);
+            // You'll need to send this to your backend
+        }
+    </script>
+</body>
+</html>

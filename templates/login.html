@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - IdeaVault</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+    <!-- Load Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">IdeaVault</div>
+            <nav class="nav-links">
+                <a href="/">Home</a>
+            </nav>
+        </header>
+        
+        <div class="login-container">
+            <div class="login-header">
+                <h1>Welcome back</h1>
+                <p>Sign in to continue to IdeaVault</p>
+            </div>
+            
+            <div class="login-options">
+                <!-- Google Sign-In Button -->
+                <div id="g_id_onload"
+                     data-client_id="YOUR_GOOGLE_CLIENT_ID"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleGoogleSignIn"
+                     data-auto_select="true">
+                </div>
+                
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left"
+                     data-width="100%">
+                </div>
+                
+                <div class="login-divider">
+                    <span>Or sign in with email</span>
+                </div>
+                
+                <form class="login-form" action="/api/auth/login" method="POST">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Sign In</button>
+                </form>
+            </div>
+            
+            <div class="form-footer">
+                <p>Don't have an account? <a href="/signup">Sign up</a></p>
+                <p><a href="/forgot-password">Forgot your password?</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

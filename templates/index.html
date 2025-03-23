@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="{{ url_for('index') }}" style="text-decoration: none;">
+                <div class="logo">IdeaVault</div>
+            </a>
+            <nav class="nav-links">
+                <a href="#">Features</a>
+                <a href="#">Pricing</a>
+                <a href="#">Support</a>
+            </nav>
+            <div>
+                <a href="{{ url_for('login') }}" class="btn btn-secondary">Log In</a>
+                <a href="{{ url_for('signup_page') }}" class="btn btn-primary">Sign Up</a>
+            </div>
+        </header>
+        
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Take notes <span class="highlight">anywhere</span>, access them <span class="highlight">everywhere</span></h1>
+                <p class="lead">Ever had an idea? and that idea was incredible and you wished you noted it down? Well, yeah now you can.</p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('signup_page') }}" class="btn btn-primary">Get Started - Free</a>
+                    <a href="#features" class="btn btn-secondary">Learn More</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1517842645767-c639042777db?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Notes App Preview">
+            </div>
+        </section>
+    </div>
+    
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>Why Choose IdeaVault?</h2>
+                <p>Powerful features designed to make note-taking effortless</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L11 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path>
+                        </svg>
+                    </div>
+                    <h3>Sync Across Devices</h3>
+                    <p>Access your notes seamlessly on your phone, tablet, or computer. Changes sync instantly.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path d="M18 2a1 1 0 011 1v9.5a4.5 4.5 0 11-3-4.24V4H8v16h9a1 1 0 110 2H7a1 1 0 01-1-1V3a1 1 0 011-1h11zm1.5 14a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path>
+                        </svg>
+                    </div>
+                    <h3>Rich Text Formatting</h3>
+                    <p>Express your ideas with formatting tools like headers, lists, bold, italic, and more.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path d="M4 15h2v5h12V4H6v5H4V3a1 1 0 011-1h14a1 1 0 011 1v18a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm6-2V9l5 3-5 3z"></path>
+                        </svg>
+                    </div>
+                    <h3>Offline Access</h3>
+                    <p>Create and edit notes even without an internet connection. Changes sync when you're back online.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <footer>
+        <div class="container" style="text-align: center; padding: 40px 0; color: #6c757d;">
+            <p>&copy; 2025 IdeaVault. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

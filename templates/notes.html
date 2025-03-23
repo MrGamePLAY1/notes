@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes - IdeaVault</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/notes.css') }}">
+    <script src="{{ url_for('static', filename='scripts/notes.js') }}"></script></head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" style="text-decoration: none;">
+                    <div class="app-logo">IdeaVault</div>
+                  </a>
+                <button class="new-note-btn" onclick="createNewNote()">New</button>
+            </div>
+            <div class="notes-list" id="notes-list">
+                <!-- Notes will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Main Editor -->
+        <div class="main-content">
+            <div class="editor-header">
+                <input type="text" class="note-title-input" id="note-title-input" placeholder="Note Title">
+            </div>
+            <div class="editor-container">
+                <textarea class="note-content" id="note-content" placeholder="Start typing your note here..."></textarea>
+            </div>
+            <div class="action-bar">
+                <button class="delete-btn" onclick="deleteCurrentNote()">Delete</button>
+                <button class="save-btn" onclick="saveCurrentNote()">Save</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
