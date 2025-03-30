@@ -7,6 +7,8 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from flask import session
+import secrets
+secrets.token_hex(16)  # This will generate a 32-character hex strin
 
 # Load environment variables
 load_dotenv()
@@ -17,8 +19,8 @@ app = Flask(__name__,
     static_folder='static'
 )
 
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
-
+# Use the key from .env, with a fallback for development
+app.secret_key = os.environ.get("SECRET_KEY")
 
 try:
     app.config["MONGO_URI"] = os.environ.get("MONGO_URI")
@@ -51,7 +53,15 @@ def notes():
 
 @app.route("/account")
 def account():
-    return render_template("account.html")
+    if 'user_id' in session:
+        # Getting the details from the mongoDB
+        user = mongo.db.users.find_one({"_id": ObjectId(session['user_id'])})
+        username = user["username"]
+        email = user["email"]
+        return render_template("account.html", user=user)
+    else:
+        print("User not logged in")
+        return redirect(url_for('login'))
 
 # Terms of Service page
 @app.route("/terms")
@@ -68,6 +78,14 @@ def privacy():
 def login():
     error = None
     return render_template("login.html", error=error)
+
+@app.route("/logout")
+def logout():
+    # Clear the session data
+    session.clear()
+    print("User logged out, session cleared")
+    # Redirect to the home page
+    return redirect(url_for('index'))
 
 # API auth login endpoint
 @app.route("/api/auth/login", methods=["POST"])
