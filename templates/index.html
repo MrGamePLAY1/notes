@@ -16,21 +16,29 @@
             </a>
             <nav class="nav-links">
                 <a href="#">Features</a>
+                {% if user %}
+                    <a href="{{ url_for('notes') }}">My Notes</a>
+                {% endif %}
                 <a href="#">Pricing</a>
                 <a href="#">Support</a>
             </nav>
             <div class="auth-section">
-                <!-- Account icon here (before login button) -->
-                <a href="{{ url_for('account') }}" class="account-icon-link" title="My Account">
-                    <div class="account-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                    </div>
-                </a>
-                <a href="{{ url_for('login') }}" class="btn btn-secondary">Log In</a>
-                <a href="{{ url_for('signup') }}" class="btn btn-primary">Sign Up</a>
+                {% if user %}
+                    <!-- User is logged in - show account icon and logout -->
+                    <a href="{{ url_for('account') }}" class="account-icon-link" title="My Account">
+                        <div class="account-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Log Out</a>
+                {% else %}
+                    <!-- User is not logged in - show login and signup buttons -->
+                    <a href="{{ url_for('login') }}" class="btn btn-secondary">Log In</a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-primary">Sign Up</a>
+                {% endif %}
             </div>
         </header>
         

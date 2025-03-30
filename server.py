@@ -49,7 +49,45 @@ def index():
 
 @app.route("/notes")
 def notes():
-    return render_template("notes.html")
+    # Check if user is logged in
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Get user's notes from database
+    try:
+        user_id = session['user_id']
+        user_notes = list(mongo.db.notes.find({"user_id": user_id, "isArchived": False}).sort("updatedAt", -1))
+        
+        # Convert ObjectId to string for each note
+        for note in user_notes:
+            note['_id'] = str(note['_id'])
+        
+        return render_template("notes.html", notes=user_notes, user_id=user_id)
+    except Exception as e:
+        print(f"Error retrieving notes: {e}")
+        return render_template("notes.html", notes=[], error="Failed to load notes")
+    
+@app.route("/api/notes")
+def api_notes():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    try:
+        user_id = session['user_id']
+        user_notes = list(mongo.db.notes.find({"user_id": user_id, "isArchived": False}).sort("updatedAt", -1))
+        
+        # Convert ObjectId to string for each note
+        for note in user_notes:
+            note['_id'] = str(note['_id'])
+            # Convert datetime objects to ISO format strings for JSON serialization
+            note['createdAt'] = note['createdAt'].isoformat()
+            note['updatedAt'] = note['updatedAt'].isoformat()
+        
+        return jsonify({"notes": user_notes})
+    except Exception as e:
+        print(f"Error retrieving notes: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/account")
 def account():
@@ -74,9 +112,54 @@ def privacy():
     return render_template("privacy.html")
 
 # Login page
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
+    
+    # Handle form submission
+    if request.method == "POST":
+        try:
+            email = request.form.get("email")
+            password = request.form.get("password")
+            
+            # Basic validation
+            if not email or not password:
+                error = "Please fill in all fields"
+                return render_template("login.html", error=error)
+            
+            # Get the users collection
+            users = mongo.db.users
+            
+            # Find user by email
+            user = users.find_one({"email": email})
+            
+            # Check credentials
+            if user and check_password_hash(user["password"], password):
+                # Store user info in session
+                session["user_id"] = str(user["_id"])
+                session["username"] = user["username"]
+                session["email"] = user["email"]
+                
+                # Update last login time
+                users.update_one(
+                    {"_id": user["_id"]},
+                    {"$set": {"lastLogin": datetime.now()}}
+                )
+                
+                print(f"User logged in: {user['username']} ({user['email']})")
+                print(f"Session after login: {session}")
+                
+                # Redirect to notes page
+                return redirect(url_for("notes"))
+            else:
+                error = "Invalid email or password"
+                print(f"Failed login attempt for email: {email}")
+        
+        except Exception as e:
+            print(f"Login error: {e}")
+            error = "An error occurred. Please try again."
+    
+    # For GET requests or failed logins, show the login form
     return render_template("login.html", error=error)
 
 @app.route("/logout")
@@ -87,70 +170,6 @@ def logout():
     # Redirect to the home page
     return redirect(url_for('index'))
 
-# API auth login endpoint
-@app.route("/api/auth/login", methods=["POST"])
-def api_login():
-    try:
-        # Get JSON data from request
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
-            
-        email = data.get("email")
-        password = data.get("password")
-        
-        # Basic validation
-        if not email or not password:
-            return jsonify({"error": "Email and password are required"}), 400
-        
-        # Get the users collection from the database
-        users = mongo.db.users
-        
-        # Find the user by email
-        user = users.find_one({"email": email})
-        
-        # Check if user exists and password is correct
-        if user and check_password_hash(user["password"], password):
-            # Store user info in session
-            session["user_id"] = str(user["_id"])
-            session["username"] = user["username"]
-            session["email"] = user["email"]
-            
-            # Update last login time
-            users.update_one(
-                {"_id": user["_id"]},
-                {"$set": {"lastLogin": datetime.now()}}
-            )
-            
-            # Return user data (excluding password)
-            user_data = {
-                "id": str(user["_id"]),
-                "username": user["username"],
-                "email": user["email"],
-                "isActive": user.get("isActive", True),
-                "createdAt": user.get("createdAt").isoformat() if "createdAt" in user else None
-            }
-            
-            return jsonify({
-                "success": True,
-                "message": "Login successful",
-                "user": user_data
-            })
-        else:
-            # Invalid credentials
-            return jsonify({
-                "success": False,
-                "error": "Invalid email or password"
-            }), 401
-                
-    except Exception as e:
-        print(f"API login error: {e}")
-        return jsonify({
-            "success": False,
-            "error": "An error occurred during login"
-        }), 500
-
 # Handling notes which are saved
 @app.route("/save-note", methods=["POST"])
 def save_note():
@@ -159,7 +178,6 @@ def save_note():
         alert = "You must be logged in to save notes"
         return redirect(url_for('login', alert=alert))
 
-# Handle signup form submission
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     # For GET requests, show the signup form
@@ -168,33 +186,56 @@ def signup():
     
     # For POST requests, process the form submission
     try:
+        print("Form data received:", request.form)
+        
+        # Basic validation
+        username = request.form.get("username")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        
+        if not username or not email or not password:
+            error = "Please fill in all required fields."
+            print(f"Missing required fields: {username=}, {email=}, {password=}")
+            return render_template("signup.html", error=error)
+        
         # Get the users collection from the database
         users = mongo.db.users
         
         # Check if user exists
         existing_user = users.find_one({
             "$or": [
-                {"username": request.form["username"]},
-                {"email": request.form["email"]}
+                {"username": username},
+                {"email": email}
             ]
         })
         
         if existing_user:
-            # Return the signup form with an error message
+            print(f"User already exists: {existing_user['username']}, {existing_user['email']}")
             error = "User with this username or email already exists"
             return render_template("signup.html", error=error)
         
         # Hash password and create user
-        hashed_password = generate_password_hash(request.form["password"])
+        hashed_password = generate_password_hash(password)
         
-        # Important: store the result of insert_one
-        result = users.insert_one({
-            "username": request.form["username"],
-            "email": request.form["email"],
+        # Create new user document
+        new_user = {
+            "username": username,
+            "email": email,
             "password": hashed_password,
             "createdAt": datetime.now(),
             "isActive": True
-        })
+        }
+        
+        
+        print("Creating new user:", new_user)
+        
+        # Insert the user into the database
+        result = users.insert_one(new_user)
+        
+        if not result.inserted_id:
+            print("Failed to insert user into database")
+            error = "Database error occurred. Please try again."
+            return render_template("signup.html", error=error)
         
         # Get the inserted ID from the result
         user_id = result.inserted_id
@@ -202,10 +243,44 @@ def signup():
         
         # Setting the session variables
         session["user_id"] = str(user_id) 
-        session["username"] = request.form["username"]
+        session["username"] = username
         
-        alert = "User created successfully!"
+        print(f"Session after signup: {session}")
+        
+        # Crwate a new note for the user
+        try: 
+            sampe_note = {
+                "user_id": str(user_id),
+                "title": "Welcome to IdeaVault!",
+                "content": "This is your first note. You can edit or delete it, or create new notes.\n\n" +
+                        "## Markdown is supported\n\n" +
+                        "* You can create lists\n" +
+                        "* Format **bold** and *italic* text\n" +
+                        "* Add [links](https://example.com)\n\n" +
+                        "Enjoy organizing your ideas!",
+                "tags": ["welcome", "getting-started"],
+                "color": "#e8f5e9",  # Light green color
+                "isPinned": True,
+                "isArchived": False,
+                "createdAt": datetime.now(),
+                "updatedAt": datetime.now()
+            }
+            
+            result = mongo.db.notes.insert_one(sampe_note)
+            
+            if result.inserted_id:
+                print(f"Sample note created for user {username} with ID: {result.inserted_id}")
+            else:
+                print("Failed to create sample note")
+                    
+        except Exception as e:
+                print(f"Error creating sample note: {e}")
+                # Continue with signup even if sample note creation fails
+        
+        
+        # Redirect to notes page
         return redirect(url_for('notes'))
+        
     except Exception as e:
         print(f"Error creating user: {e}")
         error = "An error occurred during signup. Please try again."
