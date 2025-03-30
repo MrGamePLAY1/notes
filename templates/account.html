@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - IdeaVault</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/account.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="{{ url_for('index') }}" style="text-decoration: none;">
+                <div class="logo">IdeaVault</div>
+            </a>
+            <nav class="nav-links">
+                <a href="#">Features</a>
+                <a href="#">Pricing</a>
+                <a href="#">Support</a>
+            </nav>
+            <div class="auth-section">
+                <a href="{{ url_for('account') }}" class="account-icon-link active" title="My Account">
+                    <div class="account-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                </a>
+                {% if user %}
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Log Out</a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-secondary">Log In</a>
+                <a href="{{ url_for('signup') }}" class="btn btn-primary">Sign Up</a>
+                {% endif %}
+            </div>
+        </header>
+        
+        <div class="account-container">
+            <div class="account-sidebar">
+                <div class="account-user-info">
+                    <div class="account-avatar">
+                        {% if user and user.avatar %}
+                            <img src="{{ user.avatar }}" alt="{{ user.username }}">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                {% if user %}
+                                    {{ user.username[0]|upper }}
+                                {% else %}
+                                    G
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="account-user-details">
+                        <h3>{{ user.username if user else 'Guest' }}</h3>
+                        <p>{{ user.email if user else 'Not logged in' }}</p>
+                    </div>
+                </div>
+                
+                <nav class="account-nav">
+                    <a href="#profile" class="account-nav-item active">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#security" class="account-nav-item">
+                        <i class="fas fa-lock"></i>
+                        <span>Security</span>
+                    </a>
+                    <a href="#notifications" class="account-nav-item">
+                        <i class="fas fa-bell"></i>
+                        <span>Notifications</span>
+                    </a>
+                    <a href="#billing" class="account-nav-item">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Billing</span>
+                    </a>
+                    <a href="#integrations" class="account-nav-item">
+                        <i class="fas fa-plug"></i>
+                        <span>Integrations</span>
+                    </a>
+                    {% if user %}
+                    <a href="{{ url_for('logout') }}" class="account-nav-item logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+            
+            <div class="account-content">
+                <section id="profile" class="account-section active">
+                    <h2>Profile Information</h2>
+                    <form class="account-form" method="POST" action="#">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" value="{{ user.username if user else '' }}" {% if not user %}disabled{% endif %}>
+                            </div>
+                            <div class="form-group">
+                                <label for="display_name">Display Name</label>
+                                <input type="text" id="display_name" name="display_name" value="{{ user.display_name if user and user.display_name else '' }}" {% if not user %}disabled{% endif %}>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" {% if not user %}disabled{% endif %}>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="bio">Bio</label>
+                            <textarea id="bio" name="bio" rows="4" {% if not user %}disabled{% endif %}>{{ user.bio if user and user.bio else '' }}</textarea>
+                        </div>
+                        
+                        <h3 class="section-subtitle">Profile Picture</h3>
+                        <div class="profile-picture-section">
+                            <div class="current-picture">
+                                {% if user and user.avatar %}
+                                    <img src="{{ user.avatar }}" alt="Profile Picture">
+                                {% else %}
+                                    <div class="avatar-placeholder large">
+                                        {% if user %}
+                                            {{ user.username[0]|upper }}
+                                        {% else %}
+                                            G
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="picture-upload">
+                                <p>Upload a new profile picture. Recommended size: 400x400px.</p>
+                                <input type="file" id="avatar" name="avatar" accept="image/*" {% if not user %}disabled{% endif %}>
+                                <label for="avatar" class="file-upload-btn">Choose File</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" {% if not user %}disabled{% endif %}>Save Changes</button>
+                        </div>
+                    </form>
+                </section>
+                
+                <section id="security" class="account-section">
+                    <h2>Security Settings</h2>
+                    <form class="account-form" method="POST" action="#">
+                        <h3 class="section-subtitle">Change Password</h3>
+                        <div class="form-group">
+                            <label for="current_password">Current Password</label>
+                            <input type="password" id="current_password" name="current_password" {% if not user %}disabled{% endif %}>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="new_password">New Password</label>
+                                <input type="password" id="new_password" name="new_password" {% if not user %}disabled{% endif %}>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm_password">Confirm New Password</label>
+                                <input type="password" id="confirm_password" name="confirm_password" {% if not user %}disabled{% endif %}>
+                            </div>
+                        </div>
+                        
+                        <h3 class="section-subtitle">Two-Factor Authentication</h3>
+                        <div class="two-factor-section">
+                            <div class="two-factor-status">
+                                <p>Status: <span class="status-badge inactive">Inactive</span></p>
+                                <p>Two-factor authentication adds an extra layer of security to your account.</p>
+                            </div>
+                            <button type="button" class="btn btn-outline" {% if not user %}disabled{% endif %}>Enable 2FA</button>
+                        </div>
+                        
+                        <h3 class="section-subtitle">Active Sessions</h3>
+                        <div class="sessions-list">
+                            <div class="session-item current">
+                                <div class="session-info">
+                                    <i class="fas fa-desktop"></i>
+                                    <div>
+                                        <p class="session-device">Windows - Chrome</p>
+                                        <p class="session-details">Current session • Last active now</p>
+                                    </div>
+                                </div>
+                                <span class="current-badge">Current</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" {% if not user %}disabled{% endif %}>Update Security Settings</button>
+                        </div>
+                    </form>
+                </section>
+                
+                <!-- More sections here (notifications, billing, etc.) -->
+            </div>
+        </div>
+        
+        <footer class="site-footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h3>IdeaVault</h3>
+                        <p>Your ideas, organized and accessible anywhere.</p>
+                        <div class="social-links">
+                            <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                            <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h3>Product</h3>
+                        <ul class="footer-links">
+                            <li><a href="#">Features</a></li>
+                            <li><a href="#">Pricing</a></li>
+                            <li><a href="#">Mobile App</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h3>Resources</h3>
+                        <ul class="footer-links">
+                            <li><a href="#">Help Center</a></li>
+                            <li><a href="#">Blog</a></li>
+                            <li><a href="#">Templates</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h3>Company</h3>
+                        <ul class="footer-links">
+                            <li><a href="#">About Us</a></li>
+                            <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
+                            <li><a href="{{ url_for('terms') }}">Terms of Service</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="footer-bottom">
+                    <p>&copy; 2025 IdeaVault. All rights reserved.</p>
+                    <div class="footer-language">
+                        <select name="language" id="language-selector">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle tab navigation
+            const navItems = document.querySelectorAll('.account-nav-item');
+            const sections = document.querySelectorAll('.account-section');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (this.getAttribute('href').startsWith('#')) {
+                        e.preventDefault();
+                        
+                        // Get the section id from the href
+                        const sectionId = this.getAttribute('href').substring(1);
+                        
+                        // Remove active class from all nav items and sections
+                        navItems.forEach(navItem => navItem.classList.remove('active'));
+                        sections.forEach(section => section.classList.remove('active'));
+                        
+                        // Add active class to clicked nav item and corresponding section
+                        this.classList.add('active');
+                        document.getElementById(sectionId).classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

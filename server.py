@@ -49,6 +49,10 @@ def index():
 def notes():
     return render_template("notes.html")
 
+@app.route("/account")
+def account():
+    return render_template("account.html")
+
 # Terms of Service page
 @app.route("/terms")
 def terms():
