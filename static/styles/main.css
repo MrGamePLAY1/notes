@@ -535,6 +535,13 @@ button.btn-primary {
 }
 
 /* Account Icon Styles */
+/* Authentication section styling */
+.auth-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .account-icon-link {
     display: flex;
     align-items: center;
@@ -544,7 +551,6 @@ button.btn-primary {
     border-radius: 50%;
     background-color: #f3f4f6;
     transition: all 0.3s ease;
-    color: #333;
 }
 
 .account-icon-link:hover {
@@ -562,5 +568,5 @@ button.btn-primary {
 }
 
 .account-icon svg {
-    stroke: #2e7d32; /* matches your app's green color theme */
+    stroke: #2e7d32 !important; /* This is green, not blue */
 }

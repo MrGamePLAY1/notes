@@ -8,17 +8,17 @@ from dotenv import load_dotenv
 from datetime import datetime
 from flask import session
 
-
-
-
 # Load environment variables
 load_dotenv()
 
 
 app = Flask(__name__, 
-    template_folder='../../templates',
-    static_folder='../../static'
+    template_folder='templates',
+    static_folder='static'
 )
+
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+
 
 try:
     app.config["MONGO_URI"] = os.environ.get("MONGO_URI")
@@ -33,11 +33,15 @@ mongo = PyMongo(app)
 @app.route("/")
 def index():
     # check if the user is logged in 
+    print("\n=== SESSION DEBUG ===")
+    print(f"Session contents: {session}")
     user = None
     if 'user_id' in session:
         # Getting the details from the mongoDB
         user = mongo.db.users.find_one({"_id": ObjectId(session['user_id'])})
         print(user)
+    else:
+        print("User not logged in")
     
     return render_template("index.html", user=user)
 
@@ -125,11 +129,6 @@ def api_login():
             "error": "An error occurred during login"
         }), 500
 
-# Signup page
-@app.route("/signup", methods=["GET"])
-def signup_page():
-    return render_template("signup.html")
-
 # Handling notes which are saved
 @app.route("/save-note", methods=["POST"])
 def save_note():
@@ -139,8 +138,13 @@ def save_note():
         return redirect(url_for('login', alert=alert))
 
 # Handle signup form submission
-@app.route("/signup", methods=["POST"])
+@app.route("/signup", methods=["GET", "POST"])
 def signup():
+    # For GET requests, show the signup form
+    if request.method == "GET":
+        return render_template("signup.html")
+    
+    # For POST requests, process the form submission
     try:
         # Get the users collection from the database
         users = mongo.db.users
@@ -154,11 +158,15 @@ def signup():
         })
         
         if existing_user:
-            return "User with this username or email already exists"
+            # Return the signup form with an error message
+            error = "User with this username or email already exists"
+            return render_template("signup.html", error=error)
         
         # Hash password and create user
         hashed_password = generate_password_hash(request.form["password"])
-        users.insert_one({
+        
+        # Important: store the result of insert_one
+        result = users.insert_one({
             "username": request.form["username"],
             "email": request.form["email"],
             "password": hashed_password,
@@ -166,11 +174,20 @@ def signup():
             "isActive": True
         })
         
-        print(f"User created with ID: {users.inserted_id}")
-        return redirect(url_for('login'))
+        # Get the inserted ID from the result
+        user_id = result.inserted_id
+        print(f"User created with ID: {user_id}")
+        
+        # Setting the session variables
+        session["user_id"] = str(user_id) 
+        session["username"] = request.form["username"]
+        
+        alert = "User created successfully!"
+        return redirect(url_for('notes'))
     except Exception as e:
-            print(f"Error creating user: {e}")
-            return "An error occurred during signup. Please try again."
+        print(f"Error creating user: {e}")
+        error = "An error occurred during signup. Please try again."
+        return render_template("signup.html", error=error)
 
 
 
