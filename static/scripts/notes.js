@@ -135,7 +135,7 @@ function createNewNote() {
     const newNote = {
         _id: 'new', // This will be replaced with the MongoDB ID after saving
         title: 'Untitled Note',
-        content: '',
+        content: 'Let your imagination run wild!',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -151,17 +151,10 @@ function createNewNote() {
 
 // Save the current note
 function saveCurrentNote() {
-    if (!currentNoteId) return;
+    // if (!currentNoteId) return;
     
-    const title = document.getElementById('note-title-input').value;
-    const content = document.getElementById('note-content').value;
-    
-    // Basic validation
-    if (!title.trim()) {
-        alert('Please enter a title for your note');
-        document.getElementById('note-title-input').focus();
-        return;
-    }
+    var title = document.getElementById('note-title-input').value;
+    var content = document.getElementById('note-content').value;
     
     // Prepare note data
     const noteData = {
@@ -169,7 +162,7 @@ function saveCurrentNote() {
         title: title,
         content: content
     };
-    
+
     // Send to server
     fetch('/save-note', {
         method: 'POST',
@@ -181,42 +174,24 @@ function saveCurrentNote() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // If this was a new note, update its ID
+            // Update local notes array
             if (currentNoteId === 'new') {
-                const index = notes.findIndex(note => note._id === 'new');
+                currentNoteId = data.note._id; // Update with the new ID from the server
+                notes[0] = data.note; // Replace the temporary note with the saved one
+            } else {
+                const index = notes.findIndex(note => note._id === currentNoteId);
                 if (index !== -1) {
-                    notes[index]._id = data.note_id;
-                    currentNoteId = data.note_id;
+                    notes[index] = data.note; // Update existing note
                 }
             }
             
-            // Update the note in our array
-            const noteIndex = notes.findIndex(note => note._id === currentNoteId);
-            if (noteIndex !== -1) {
-                notes[noteIndex].title = title;
-                notes[noteIndex].content = content;
-                notes[noteIndex].updatedAt = new Date().toISOString();
-            }
-            
-            // Refresh the UI
+            // Refresh UI
             renderNotesList();
-            
-            // Show save confirmation
-            const saveBtn = document.getElementById('save-note-btn');
-            const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
-            
-            setTimeout(() => {
-                saveBtn.innerHTML = originalText;
-            }, 1500);
         } else {
             alert('Error saving note: ' + data.error);
         }
     })
-    .catch(error => {
-        console.error('Error saving note:', error);
-        alert('Failed to save note. Please try again.');
-    });
+   
 }
 
 // Delete the current note

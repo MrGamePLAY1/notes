@@ -49,6 +49,10 @@ def index():
 
 @app.route("/notes")
 def notes():
+    
+    print("\n=== SESSION DEBUG ===")
+    print(f"Session contents: {session}")
+    
     # Check if user is logged in
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -177,6 +181,78 @@ def save_note():
     if 'user_id' not in session:
         alert = "You must be logged in to save notes"
         return redirect(url_for('login', alert=alert))
+    try: 
+        # Get the json data from the request
+        data = request.get_json()
+        user_id = session['user_id']
+        print("Received data:", data)
+        
+        # Checking if this is a new note or existing note update
+        if data.get("_id") == 'new' or data.get("_id") is None:
+            # Create a new note
+            note = {
+                "user_id": str(user_id),
+                "title": data["title"],
+                "content": data["content"],
+                "tags": data.get("tags", []),
+                "color": data.get("color", "#ffffff"),
+                "isPinned": data.get("isPinned", False),
+                "isArchived": False,
+                "createdAt": datetime.now(),
+                "updatedAt": datetime.now()
+            }
+            result = mongo.db.notes.insert_one(note)
+            note_id = str(result.inserted_id)
+            print(f"New note created: {note_id}")
+            
+            # Return the created note with ID
+            return jsonify({
+                "success": True, 
+                "note_id": note_id,
+                "message": "Note created successfully"
+            })
+            
+        else:
+            # Update existing note
+            try:
+                note_id = ObjectId(data["_id"])
+                result = mongo.db.notes.update_one(
+                    {"_id": note_id, "user_id": user_id},
+                    {
+                        "$set": {
+                            "title": data["title"],
+                            "content": data["content"],
+                            "tags": data.get("tags", []),
+                            "color": data.get("color", "#ffffff"),
+                            "isPinned": data.get("isPinned", False),
+                            "updatedAt": datetime.now()
+                        }
+                    }
+                )
+                
+                if result.matched_count == 0:
+                    return jsonify({
+                        "success": False, 
+                        "error": "Note not found or you don't have permission to update it"
+                    })
+                    
+                print(f"Note updated: {data['_id']}")
+                return jsonify({
+                    "success": True,
+                    "message": "Note updated successfully"
+                })
+                
+            except Exception as e:
+                print(f"Error updating note: {e}")
+                return jsonify({
+                    "success": False, 
+                    "error": f"Invalid note ID format: {data['_id']}"
+                })
+            
+    except Exception as e:
+        print(f"Error saving note: {e}")
+        return jsonify({"success": False, "error": str(e)})
+        
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
