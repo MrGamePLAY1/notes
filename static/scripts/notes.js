@@ -15,6 +15,62 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchNotesFromServer();
 });
 
+
+// Render the notes list
+function renderNotesList() {
+    const notesList = document.getElementById('notes-list');
+    notesList.innerHTML = ''; // Clear the list
+    
+    if (notes.length === 0) {
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'empty-notes-message';
+        emptyMessage.textContent = 'No notes yet. Click "New" to create your first note!';
+        notesList.appendChild(emptyMessage);
+        return;
+    }
+    
+    // Sort notes by updated date (newest first)
+    const sortedNotes = [...notes].sort((a, b) => {
+        return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+    
+    sortedNotes.forEach(note => {
+        const noteItem = document.createElement('div');
+        noteItem.className = 'note-item';
+        if (note._id === currentNoteId) {
+            noteItem.classList.add('active');
+        }
+        noteItem.dataset.id = note._id;
+        noteItem.onclick = () => selectNote(note._id);
+        
+        const noteContent = document.createElement('div');
+        noteContent.className = 'note-item-content';
+        
+        const noteTitle = document.createElement('h3');
+        noteTitle.className = 'note-item-title';
+        noteTitle.textContent = note.title || 'Untitled';
+        
+        const notePreview = document.createElement('p');
+        notePreview.className = 'note-item-preview';
+        notePreview.textContent = note.content ? (note.content.length > 60 ? 
+            note.content.substring(0, 60) + '...' : note.content) : '';
+        
+        const noteMeta = document.createElement('div');
+        noteMeta.className = 'note-item-meta';
+        
+        const noteDate = document.createElement('span');
+        noteDate.className = 'note-date';
+        noteDate.textContent = formatDate(note.updatedAt);
+        
+        noteMeta.appendChild(noteDate);
+        noteContent.appendChild(noteTitle);
+        noteContent.appendChild(notePreview);
+        noteContent.appendChild(noteMeta);
+        noteItem.appendChild(noteContent);
+        notesList.appendChild(noteItem);
+    });
+}
+
 // Function to fetch notes from the server
 function fetchNotesFromServer() {
     fetch('/api/notes')
@@ -48,57 +104,6 @@ function clearEditor() {
     currentNoteId = null;
 }
 
-// Render the notes list in the sidebar
-function renderNotesList() {
-    const notesList = document.getElementById('notes-list');
-    notesList.innerHTML = '';
-    
-    if (notes.length === 0) {
-        const emptyMessage = document.createElement('div');
-        emptyMessage.className = 'empty-notes-message';
-        emptyMessage.textContent = 'No notes yet. Click "New" to create your first note!';
-        notesList.appendChild(emptyMessage);
-        return;
-    }
-    
-    notes.forEach(note => {
-        const noteItem = document.createElement('div');
-        noteItem.className = 'note-item';
-        noteItem.dataset.id = note._id; // Use _id from MongoDB
-        noteItem.onclick = () => selectNote(note._id);
-        
-        const noteContent = document.createElement('div');
-        noteContent.className = 'note-item-content';
-        
-        const noteTitle = document.createElement('h3');
-        noteTitle.className = 'note-item-title';
-        noteTitle.textContent = note.title || 'Untitled';
-        
-        const notePreview = document.createElement('p');
-        notePreview.className = 'note-item-preview';
-        notePreview.textContent = note.content ? (note.content.length > 60 ? 
-            note.content.substring(0, 60) + '...' : note.content) : '';
-        
-        const noteMeta = document.createElement('div');
-        noteMeta.className = 'note-item-meta';
-        
-        const noteDate = document.createElement('span');
-        noteDate.className = 'note-date';
-        noteDate.textContent = formatDate(note.updatedAt);
-        
-        noteMeta.appendChild(noteDate);
-        noteContent.appendChild(noteTitle);
-        noteContent.appendChild(notePreview);
-        noteContent.appendChild(noteMeta);
-        noteItem.appendChild(noteContent);
-        notesList.appendChild(noteItem);
-        
-        // Mark the current note as selected
-        if (note._id === currentNoteId) {
-            noteItem.classList.add('active');
-        }
-    });
-}
 
 // Select a note to edit
 function selectNote(id) {
@@ -149,6 +154,8 @@ function createNewNote() {
     document.getElementById('note-title-input').focus();
 }
 
+
+
 // Save the current note
 function saveCurrentNote() {
     // if (!currentNoteId) return;
@@ -176,21 +183,40 @@ function saveCurrentNote() {
         if (data.success) {
             // Update local notes array
             if (currentNoteId === 'new') {
-                currentNoteId = data.note._id; // Update with the new ID from the server
-                notes[0] = data.note; // Replace the temporary note with the saved one
+                // For a new note, update the ID and replace in the notes array
+                currentNoteId = data.note_id;
+                const index = notes.findIndex(note => note._id === 'new');
+                if (index !== -1) {
+                    notes[index] = data.note;
+                }
             } else {
+                // For existing notes, update the note in the array
                 const index = notes.findIndex(note => note._id === currentNoteId);
                 if (index !== -1) {
-                    notes[index] = data.note; // Update existing note
+                    notes[index] = data.note;
                 }
             }
             
             // Refresh UI
             renderNotesList();
+            
+            // Show feedback
+            const saveBtn = document.getElementById('save-note-btn');
+            const originalHTML = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = originalHTML;
+            }, 1500);
+            
         } else {
             alert('Error saving note: ' + data.error);
         }
     })
+    .catch(error => {
+        console.error('Error saving note:', error);
+        alert('Failed to save note. Please try again.');
+    });
    
 }
 

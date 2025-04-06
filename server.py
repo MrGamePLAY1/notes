@@ -177,68 +177,107 @@ def logout():
 # Handling notes which are saved
 @app.route("/save-note", methods=["POST"])
 def save_note():
-    # Chcking if the user is currently logged in
+# Check if user is logged in
     if 'user_id' not in session:
-        alert = "You must be logged in to save notes"
-        return redirect(url_for('login', alert=alert))
-    try: 
-        # Get the json data from the request
+        return jsonify({"success": False, "error": "You must be logged in to save notes"})
+    
+    try:
+        # Get JSON data from request
         data = request.get_json()
         user_id = session['user_id']
-        print("Received data:", data)
         
-        # Checking if this is a new note or existing note update
-        if data.get("_id") == 'new' or data.get("_id") is None:
-            # Create a new note
-            note = {
-                "user_id": str(user_id),
-                "title": data["title"],
-                "content": data["content"],
-                "tags": data.get("tags", []),
-                "color": data.get("color", "#ffffff"),
-                "isPinned": data.get("isPinned", False),
+        print(f"Received note data: {data}")
+        
+        # Basic validation
+        if not data or not data.get('title'):
+            return jsonify({"success": False, "error": "Note title is required"})
+        
+        # For a new note
+        if data.get('_id') == 'new':
+            # Create new note document
+            new_note = {
+                "user_id": user_id,
+                "title": data.get('title'),
+                "content": data.get('content', ''),
+                "color": data.get('color', '#ffffff'),
+                "isPinned": False,
                 "isArchived": False,
                 "createdAt": datetime.now(),
                 "updatedAt": datetime.now()
             }
-            result = mongo.db.notes.insert_one(note)
-            note_id = str(result.inserted_id)
-            print(f"New note created: {note_id}")
             
-            # Return the created note with ID
+            # Insert into MongoDB
+            result = mongo.db.notes.insert_one(new_note)
+            note_id = str(result.inserted_id)
+            
+            print(f"Created new note with ID: {note_id}")
+            
+            # Get the complete note for response
+            saved_note = mongo.db.notes.find_one({"_id": result.inserted_id})
+            note_response = {
+                "_id": str(saved_note["_id"]),
+                "title": saved_note["title"],
+                "content": saved_note["content"],
+                "color": saved_note.get("color", "#ffffff"),
+                "isPinned": saved_note.get("isPinned", False),
+                "isArchived": saved_note.get("isArchived", False),
+                "createdAt": saved_note["createdAt"].isoformat(),
+                "updatedAt": saved_note["updatedAt"].isoformat()
+            }
+            
             return jsonify({
-                "success": True, 
+                "success": True,
                 "note_id": note_id,
+                "note": note_response,
                 "message": "Note created successfully"
             })
             
+        # For updating an existing note
         else:
-            # Update existing note
             try:
-                note_id = ObjectId(data["_id"])
+                note_id = ObjectId(data.get('_id'))
+                
+                # Verify the note belongs to this user
+                existing_note = mongo.db.notes.find_one({
+                    "_id": note_id,
+                    "user_id": user_id
+                })
+                
+                if not existing_note:
+                    return jsonify({"success": False, "error": "Note not found or unauthorized"})
+                
+                # Update the note
                 result = mongo.db.notes.update_one(
-                    {"_id": note_id, "user_id": user_id},
-                    {
-                        "$set": {
-                            "title": data["title"],
-                            "content": data["content"],
-                            "tags": data.get("tags", []),
-                            "color": data.get("color", "#ffffff"),
-                            "isPinned": data.get("isPinned", False),
-                            "updatedAt": datetime.now()
-                        }
-                    }
+                    {"_id": note_id},
+                    {"$set": {
+                        "title": data.get('title'),
+                        "content": data.get('content', ''),
+                        "color": data.get('color', existing_note.get('color', '#ffffff')),
+                        "updatedAt": datetime.now()
+                    }}
                 )
                 
-                if result.matched_count == 0:
-                    return jsonify({
-                        "success": False, 
-                        "error": "Note not found or you don't have permission to update it"
-                    })
-                    
-                print(f"Note updated: {data['_id']}")
+                if result.modified_count == 0 and result.matched_count == 0:
+                    return jsonify({"success": False, "error": "Failed to update note"})
+                
+                # Get the updated note for response
+                updated_note = mongo.db.notes.find_one({"_id": note_id})
+                note_response = {
+                    "_id": str(updated_note["_id"]),
+                    "title": updated_note["title"],
+                    "content": updated_note["content"],
+                    "color": updated_note.get("color", "#ffffff"),
+                    "isPinned": updated_note.get("isPinned", False),
+                    "isArchived": updated_note.get("isArchived", False),
+                    "createdAt": updated_note["createdAt"].isoformat(),
+                    "updatedAt": updated_note["updatedAt"].isoformat()
+                }
+                
+                print(f"Updated note with ID: {data.get('_id')}")
+                
                 return jsonify({
                     "success": True,
+                    "note": note_response,
                     "message": "Note updated successfully"
                 })
                 
@@ -246,12 +285,14 @@ def save_note():
                 print(f"Error updating note: {e}")
                 return jsonify({
                     "success": False, 
-                    "error": f"Invalid note ID format: {data['_id']}"
+                    "error": f"Invalid note ID or format: {str(e)}"
                 })
             
     except Exception as e:
         print(f"Error saving note: {e}")
         return jsonify({"success": False, "error": str(e)})
+
+    
         
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -361,6 +402,8 @@ def signup():
         print(f"Error creating user: {e}")
         error = "An error occurred during signup. Please try again."
         return render_template("signup.html", error=error)
+
+
 
 
 
